@@ -1,0 +1,49 @@
+services:
+  mysql_engine:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: petshop
+      MYSQL_USER: user
+      MYSQL_PASSWORD: ivo
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "3306:3306"
+    restart: always
+    volumes:
+      - ./data:/var/lib/mysql
+
+  backend-petshop:
+    build: ./backend-petshop
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      DB_HOST: mysql_engine
+      DB_USER: user
+      DB_PASSWORD: ivo
+      DB_NAME: petshop
+    depends_on:
+      mysql_engine:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend 
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend-petshop
+
+
+
+volumes:
+  mysql_data:
